@@ -394,25 +394,25 @@ Macro F1 is the primary model-selection metric because it weighs every class equ
 
 ## Model Results
 
-Trained and evaluated on the real TrashNet dataset (2,527 images after dedup, 70/15/15 split: 1766/379/379 — see [Dataset](#dataset)), 15 epochs (baseline) / 8+5 epochs head+fine-tune (MobileNetV2), CPU only.
+Trained and evaluated end-to-end inside [notebook/rurangasort_training.ipynb](notebook/rurangasort_training.ipynb) on the real TrashNet dataset (2,524 images after dedup, 70/15/15 split: 1766/379/379 — see [Dataset](#dataset)), 15 epochs (baseline) / 8+5 epochs head+fine-tune (MobileNetV2), CPU only. The notebook is committed **with its outputs** — open it directly to see the plots and printed metrics below reproduced in full, including EDA charts, training curves, confusion matrices, and a visualised single-image prediction.
 
 | Metric | Baseline CNN | MobileNetV2 |
 |---|---:|---:|
-| Test accuracy | 0.245 | 0.562 |
-| Macro precision | 0.132 | 0.474 |
-| Macro recall | 0.178 | 0.495 |
-| Macro F1-score | **0.093** | **0.480** |
-| Weighted F1-score | 0.124 | 0.544 |
-| ROC-AUC (OvR macro) | 0.565 | 0.819 |
-| PR-AUC (macro) | 0.222 | 0.514 |
-| Log loss | 1.721 | 1.265 |
-| Average latency | 80.1 ms | 87.9 ms |
-| P95 latency | 85.3 ms | 93.2 ms |
+| Test accuracy | 0.235 | 0.546 |
+| Macro precision | 0.039 | 0.506 |
+| Macro recall | 0.167 | 0.475 |
+| Macro F1-score | **0.063** | **0.451** |
+| Weighted F1-score | 0.089 | 0.510 |
+| ROC-AUC (OvR macro) | 0.483 | 0.867 |
+| PR-AUC (macro) | 0.188 | 0.583 |
+| Log loss | 1.718 | 1.152 |
+| Average latency | 84.7 ms | 89.5 ms |
+| P95 latency | 92.5 ms | 98.6 ms |
 | Model size | 1.3 MB | 20.7 MB |
 
-**Selected model: MobileNetV2 (v1, currently active).** The baseline CNN, trained from scratch on ~1,766 real images, collapsed to almost always predicting the majority class (`paper`, ~24% support and precisely the model's overall accuracy) — 0 recall on cardboard/metal/trash, an accuracy number that looks passable in isolation but a macro F1 of 0.093 that exposes the collapse immediately, which is exactly why macro F1 (not accuracy) drives model selection here. MobileNetV2's ImageNet-pretrained features generalize far better from this small a dataset: macro F1 0.480, real recall on 5 of 6 classes (cardboard 0.77, glass 0.58, metal 0.56, paper 0.72, plastic 0.60), at the cost of ~16x model size and marginally higher latency (both still well under the 500ms promotion threshold). Its weak point is `trash` (only 21 test images, the smallest class) — see [Known Limitations](#known-limitations).
+**Selected model: MobileNetV2 (v1, currently active).** The baseline CNN, trained from scratch on ~1,766 real images, collapsed to almost always predicting the single majority class — an accuracy number that looks passable in isolation but a macro F1 of 0.063 that exposes the collapse immediately (0 recall on most classes), which is exactly why macro F1 (not accuracy) drives model selection here. MobileNetV2's ImageNet-pretrained features generalize far better from this small a dataset: macro F1 0.451, real (non-zero) recall on every class, at the cost of ~16x model size and marginally higher latency (both still well under the 500ms promotion threshold). Its weakest class is `trash` (only 21 test images, by far the smallest class) — see [Known Limitations](#known-limitations). Re-running the notebook will retrain both models from scratch with fresh random initialization, so exact numbers will vary run to run (we observed macro F1 for MobileNetV2 ranging ~0.45-0.54 across runs) — the qualitative conclusion (MobileNetV2 wins decisively, baseline collapses) reproduces reliably.
 
-Full per-class precision/recall/F1 and the confusion matrix are in `models/active/metrics.json` after running the pipeline yourself; regenerate this table anytime with `python scripts/prepare_data.py && python -m src.training --model <name> --epochs ...` for each architecture, or via the notebook.
+Full per-class precision/recall/F1 and the confusion matrix are in `models/active/metrics.json` after running the pipeline; regenerate this table anytime via the notebook, or with `python scripts/prepare_data.py && python -m src.training --model <name> --epochs ...` for each architecture.
 
 ---
 
