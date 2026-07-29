@@ -25,7 +25,6 @@ class HealthResponse(BaseModel):
     model_version: str | None
     uptime_seconds: float
     environment: str
-    load_error: str | None = None
 
 
 class ModelInfoResponse(BaseModel):

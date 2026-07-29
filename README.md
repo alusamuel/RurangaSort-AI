@@ -23,16 +23,18 @@ The project demonstrates the full Machine Learning lifecycle:
 
 ## Video Demo
 
-YouTube link: `https://youtube.com/YOUR-VIDEO-ID` (replace after recording — see [Demonstration Video](#demonstration-video)).
+YouTube link: [https://youtu.be/s7iF8YVM4dk](https://youtu.be/s7iF8YVM4dk) (see [Demonstration Video](#demonstration-video) for what it covers).
 
 ## Live URLs
 
 ```text
-Live application:   https://YOUR-APPLICATION-URL
-API:                https://YOUR-API-URL
-Swagger docs:       https://YOUR-API-URL/docs
-GitHub repository:  https://github.com/USERNAME/rurangasort-ai
+Live application:   https://rurangasort-ai-mbjffcpbkeximntzmtzkmz.streamlit.app
+API:                https://rurangasort-ai.onrender.com
+Swagger docs:       https://rurangasort-ai.onrender.com/docs
+GitHub repository:  https://github.com/alusamuel/RurangaSort-AI
 ```
+
+Note: the API is on Render's free tier, which sleeps after 15 minutes idle — the first request after a period of inactivity takes ~30-60s to wake up.
 
 ---
 
@@ -725,7 +727,7 @@ The API is stateless — uploaded files and model versions must not depend solel
 
 Should show: project intro → repo → dataset structure → preprocessing → visualizations → CNN training → MobileNetV2 training → evaluation/confusion matrix → single prediction → dashboard → bulk upload → retraining trigger → training status → candidate evaluation → promotion/rejection → API docs → uptime → Locust load test → 1 vs 2 vs 4 container comparison → cloud deployment → limitations.
 
-YouTube link: `https://youtube.com/YOUR-VIDEO-ID`
+YouTube link: [https://youtu.be/s7iF8YVM4dk](https://youtu.be/s7iF8YVM4dk)
 
 ---
 

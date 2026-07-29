@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import traceback
-
 from fastapi import APIRouter, Depends
 
 from api.dependencies import get_current_predictor
@@ -17,18 +15,11 @@ router = APIRouter(tags=["health"])
 @router.get("/health", response_model=HealthResponse)
 def health(predictor: Predictor = Depends(get_current_predictor)):
     model_loaded = predictor.is_loaded
-    load_error = None
     if not model_loaded:
         try:
             predictor.load()
             model_loaded = True
         except Exception:
-            # Surfaced in the response (not just server logs) so the actual cause is
-            # visible with a single `curl .../health` call, without needing dashboard
-            # log access on hosts (e.g. Render's free tier) where that's inconvenient.
-            # TODO: remove load_error from the public response once the cross-platform
-            # model reload issue is diagnosed and fixed -- this leaks internal paths.
-            load_error = traceback.format_exc()[-2000:]
             model_loaded = False
 
     return HealthResponse(
@@ -37,7 +28,6 @@ def health(predictor: Predictor = Depends(get_current_predictor)):
         model_version=predictor.model_version if model_loaded else None,
         uptime_seconds=round(get_process_uptime_seconds(), 1),
         environment=settings.environment,
-        load_error=load_error,
     )
 
 
