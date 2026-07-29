@@ -2,9 +2,20 @@
 Dashboard, Prediction, Visualizations, and Retraining."""
 from __future__ import annotations
 
+import sys
+from pathlib import Path
+
 import streamlit as st
 
-from ui.api_client import BASE_URL, get_health
+# Streamlit only puts this script's own directory (ui/) on sys.path, not its
+# parent -- so `from ui.api_client import ...` can't resolve unless the repo
+# root is added explicitly first. Every page under ui/pages/ already does this;
+# app.py (the entrypoint) needs it too, since it's not exempt from the same rule.
+ROOT_DIR = Path(__file__).resolve().parent.parent
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
+
+from ui.api_client import BASE_URL, get_health  # noqa: E402
 
 st.set_page_config(page_title="RurangaSort AI", page_icon="♻️", layout="wide")
 
