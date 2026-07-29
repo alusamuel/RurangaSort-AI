@@ -1,0 +1,67 @@
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - API_KEY=${API_KEY:-change-me-local-dev-key}
+      - ENVIRONMENT=production
+    volumes:
+      - model_store:/app/models
+      - data_store:/app/data
+    expose:
+      - "8000"
+    depends_on:
+      redis:
+        condition: service_healthy
+    deploy:
+      replicas: 1
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - ENVIRONMENT=production
+    volumes:
+      - model_store:/app/models
+      - data_store:/app/data
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  ui:
+    build:
+      context: .
+      dockerfile: Dockerfile.ui
+    environment:
+      - API_BASE_URL=http://nginx
+    ports:
+      - "8501:8501"
+    depends_on:
+      - nginx
+
+  nginx:
+    image: nginx:1.27-alpine
+    volumes:
+      - ./infrastructure/nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "80:80"
+    depends_on:
+      - api
+
+volumes:
+  model_store:
+  data_store:

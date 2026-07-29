@@ -1,0 +1,52 @@
+{
+  "family": "rurangasort-api",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::YOUR_ACCOUNT_ID:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::YOUR_ACCOUNT_ID:role/rurangasortTaskRole",
+  "containerDefinitions": [
+    {
+      "name": "api",
+      "image": "YOUR_ACCOUNT_ID.dkr.ecr.YOUR_REGION.amazonaws.com/rurangasort-api:latest",
+      "essential": true,
+      "portMappings": [{ "containerPort": 8000, "protocol": "tcp" }],
+      "environment": [
+        { "name": "ENVIRONMENT", "value": "production" },
+        { "name": "REDIS_URL", "value": "redis://YOUR_ELASTICACHE_ENDPOINT:6379/0" }
+      ],
+      "secrets": [
+        { "name": "API_KEY", "valueFrom": "arn:aws:secretsmanager:YOUR_REGION:YOUR_ACCOUNT_ID:secret:rurangasort/api-key" }
+      ],
+      "mountPoints": [
+        { "sourceVolume": "model-store", "containerPath": "/app/models" }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/rurangasort-api",
+          "awslogs-region": "YOUR_REGION",
+          "awslogs-stream-prefix": "api"
+        }
+      },
+      "healthCheck": {
+        "command": ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\" || exit 1"],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 30
+      }
+    }
+  ],
+  "volumes": [
+    {
+      "name": "model-store",
+      "efsVolumeConfiguration": {
+        "fileSystemId": "YOUR_EFS_FILE_SYSTEM_ID",
+        "rootDirectory": "/rurangasort/models",
+        "transitEncryption": "ENABLED"
+      }
+    }
+  ]
+}
