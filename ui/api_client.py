@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 
 import requests
+import streamlit as st
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 if str(ROOT_DIR) not in sys.path:
@@ -13,7 +14,23 @@ if str(ROOT_DIR) not in sys.path:
 
 from src.config import settings  # noqa: E402
 
-BASE_URL = os.environ.get("API_BASE_URL", settings.api_base_url).rstrip("/")
+
+def _resolve_base_url() -> str:
+    """Order of precedence: Streamlit Cloud secrets -> plain env var -> local default.
+
+    On Streamlit Community Cloud the backend URL is set via the app's Secrets manager
+    (st.secrets), not a regular environment variable, so that has to be checked
+    explicitly -- os.environ alone isn't populated from it.
+    """
+    try:
+        if "API_BASE_URL" in st.secrets:
+            return str(st.secrets["API_BASE_URL"])
+    except Exception:
+        pass  # no secrets.toml present (e.g. running locally) -- fall through
+    return os.environ.get("API_BASE_URL", settings.api_base_url)
+
+
+BASE_URL = _resolve_base_url().rstrip("/")
 DEFAULT_TIMEOUT = 30
 
 

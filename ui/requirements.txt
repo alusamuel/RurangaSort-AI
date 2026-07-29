@@ -1,0 +1,10 @@
+# Streamlit Community Cloud installs whichever requirements.txt lives next to the
+# app's entrypoint (ui/app.py) in preference to the repo-root one, which pulls in
+# TensorFlow/Celery/FastAPI/etc. that the UI process never imports. Keeping this
+# list UI-only keeps the free-tier build fast and under the memory limit.
+streamlit>=1.35
+plotly>=5.22
+requests>=2.32
+pandas>=2.1
+pydantic-settings>=2.2
+python-dotenv>=1.0
