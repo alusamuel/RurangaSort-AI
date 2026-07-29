@@ -51,7 +51,13 @@ def build_mobilenet_v2(num_classes: int, input_shape: tuple[int, int, int] | Non
     base_model.trainable = False
 
     inputs = layers.Input(shape=input_shape)
-    x = tf.keras.applications.mobilenet_v2.preprocess_input(inputs * 255.0)
+    # Our pipeline already normalizes images to [0, 1] (see src.preprocessing / src.training).
+    # MobileNetV2's own preprocess_input expects [0, 255] and maps it to [-1, 1] via x/127.5 - 1;
+    # for x already in [0, 1] that composes to exactly x*2 - 1, so a single Rescaling layer
+    # reproduces it. This avoids calling preprocess_input directly on a raw `inputs * 255.0` op,
+    # which isn't a proper Keras layer -- saving that to .h5 and reloading it later fails with
+    # "Unknown layer: 'TrueDivide'" because the arithmetic ops aren't registered/serializable.
+    x = layers.Rescaling(scale=2.0, offset=-1.0)(inputs)
     x = base_model(x, training=False)
     x = layers.GlobalAveragePooling2D()(x)
     x = layers.Dropout(0.3)(x)

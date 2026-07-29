@@ -156,8 +156,11 @@ def promote_candidate() -> dict:
     previous_metadata = get_active_metadata()
     new_version = _next_version(previous_metadata)
 
-    if active_dir.exists() and any(active_dir.iterdir()):
-        archive_target = archived_dir / (previous_metadata.get("model_version", "unknown") if previous_metadata else "unknown")
+    # Only archive when there's a *real* previous model (model_metadata.json present) --
+    # active_dir existing with just a stray .gitkeep (e.g. right after a fresh checkout)
+    # is not a model to preserve, and archiving it would create a bogus archived/unknown/.
+    if previous_metadata is not None:
+        archive_target = archived_dir / previous_metadata.get("model_version", "unknown")
         if archive_target.exists():
             shutil.rmtree(archive_target)
         shutil.copytree(active_dir, archive_target)

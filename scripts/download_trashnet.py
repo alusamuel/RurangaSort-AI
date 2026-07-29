@@ -1,20 +1,31 @@
 """Download and lay out the real TrashNet dataset into data/raw/<class>/*.
 
 TrashNet (Gary Thung & Mindy Yang, Stanford, CC BY 2.0) has 6 classes: cardboard,
-glass, metal, paper, plastic, trash. It isn't hosted behind a single stable
-anonymous-download URL, so this script supports three sources -- use whichever
-you have access to:
+glass, metal, paper, plastic, trash. The original ~3.5GB dataset exceeded GitHub's
+git-lfs size limit, so upstream (github.com/garythung/trashnet) now points at a
+Hugging Face mirror: https://huggingface.co/datasets/garythung/trashnet. That repo
+is *not* laid out as an imagefolder dataset -- it just hosts the same two zip files
+the original repo did (`dataset-resized.zip`, 42.8MB; `dataset-original.zip`, 3.6GB),
+so this script downloads one of those directly rather than going through the
+`datasets` library (whose imagefolder auto-loader misinterprets this repo's layout).
+Four sources are supported -- use whichever fits:
 
-1. --url  a direct HTTPS link to a zip/tar of the dataset (e.g. a mirror you trust,
+1. --huggingface [repo-id]  (default & recommended)
+          downloads dataset-resized.zip (42.8MB, already resized/cleaned) from
+          the given Hugging Face dataset repo id (default "garythung/trashnet");
+          pass --full-size to get dataset-original.zip (3.6GB) instead
+2. --url  a direct HTTPS link to a zip/tar of the dataset (e.g. a mirror you trust,
           or a pre-signed S3/GDrive link) laid out as <root>/<class>/*.jpg
-2. --kaggle "owner/dataset-slug"
+3. --kaggle "owner/dataset-slug"
           uses the `kaggle` CLI (requires ~/.kaggle/kaggle.json credentials) to
           download a Kaggle mirror, e.g. "asdasdasasdas/garbage-classification"
-3. --manual-dir path
+4. --manual-dir path
           you already downloaded/extracted the dataset yourself; this just
           validates and copies it into data/raw/ with the expected structure
 
 Usage:
+    python scripts/download_trashnet.py --huggingface
+    python scripts/download_trashnet.py --huggingface --full-size
     python scripts/download_trashnet.py --url https://example.com/trashnet.zip
     python scripts/download_trashnet.py --kaggle asdasdasasdas/garbage-classification
     python scripts/download_trashnet.py --manual-dir /path/to/extracted/dataset-resized
@@ -32,6 +43,7 @@ from urllib.request import urlretrieve
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 CLASS_NAMES = ["cardboard", "glass", "metal", "paper", "plastic", "trash"]
+DEFAULT_HF_REPO_ID = "garythung/trashnet"
 
 
 def _extract_archive(archive_path: Path, extract_to: Path) -> None:
@@ -82,6 +94,12 @@ def download_via_url(url: str, raw_dir: Path, workdir: Path) -> None:
     _copy_into_raw(class_dirs, raw_dir)
 
 
+def download_via_huggingface(repo_id: str, raw_dir: Path, workdir: Path, full_size: bool = False) -> None:
+    filename = "dataset-original.zip" if full_size else "dataset-resized.zip"
+    url = f"https://huggingface.co/datasets/{repo_id}/resolve/main/{filename}"
+    download_via_url(url, raw_dir, workdir)
+
+
 def download_via_kaggle(dataset_slug: str, raw_dir: Path, workdir: Path) -> None:
     print(f"Downloading Kaggle dataset '{dataset_slug}' (requires kaggle CLI + credentials) ...")
     extract_dir = workdir / "kaggle_extracted"
@@ -108,16 +126,28 @@ def use_manual_dir(manual_dir: Path, raw_dir: Path) -> None:
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument(
+        "--huggingface",
+        nargs="?",
+        const=DEFAULT_HF_REPO_ID,
+        default=None,
+        metavar="REPO_ID",
+        help=f"Download from the Hugging Face Hub (default repo id: {DEFAULT_HF_REPO_ID})",
+    )
+    parser.add_argument(
+        "--full-size", action="store_true", help="With --huggingface, download the 3.6GB original instead of the 42.8MB resized zip"
+    )
     parser.add_argument("--url", help="Direct URL to a zip/tar archive of the dataset")
     parser.add_argument("--kaggle", help="Kaggle dataset slug, e.g. asdasdasasdas/garbage-classification")
     parser.add_argument("--manual-dir", help="Path to an already-downloaded/extracted dataset")
     parser.add_argument("--output-dir", default=str(ROOT_DIR / "data" / "raw"))
     args = parser.parse_args()
 
-    if not any([args.url, args.kaggle, args.manual_dir]):
+    if not any([args.huggingface, args.url, args.kaggle, args.manual_dir]):
         parser.print_help()
         print(
             "\nNo source given. Pick one:\n"
+            f"  --huggingface [repo-id]          (default: {DEFAULT_HF_REPO_ID})\n"
             "  --url <direct archive URL>\n"
             "  --kaggle <owner/dataset-slug>   (needs `pip install kaggle` + ~/.kaggle/kaggle.json)\n"
             "  --manual-dir <path>             (dataset you already downloaded yourself)\n"
@@ -136,6 +166,8 @@ def main():
             download_via_kaggle(args.kaggle, raw_dir, workdir)
         elif args.url:
             download_via_url(args.url, raw_dir, workdir)
+        elif args.huggingface:
+            download_via_huggingface(args.huggingface, raw_dir, workdir, full_size=args.full_size)
     finally:
         shutil.rmtree(workdir, ignore_errors=True)
 

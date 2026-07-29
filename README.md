@@ -291,10 +291,11 @@ mlpo/
 
 ### Source
 
-The reference dataset is **TrashNet** (Gary Thung & Mindy Yang, Stanford, CC BY 2.0), 6 classes: cardboard, glass, metal, paper, plastic, trash.
+The reference dataset is **TrashNet** (Gary Thung & Mindy Yang, Stanford, CC BY 2.0), 6 classes: cardboard, glass, metal, paper, plastic, trash. The original ~3.5GB archive exceeded GitHub's git-lfs limit, so the upstream repo ([garythung/trashnet](https://github.com/garythung/trashnet)) now points at a Hugging Face mirror: [`garythung/trashnet`](https://huggingface.co/datasets/garythung/trashnet), which hosts the same `dataset-resized.zip` (42.8MB, 2,527 images) and `dataset-original.zip` (3.6GB) the original repo did.
 
-- Download script: [scripts/download_trashnet.py](scripts/download_trashnet.py) — pulls the public dataset into `data/raw/`.
+- Download script: [scripts/download_trashnet.py](scripts/download_trashnet.py) — `python scripts/download_trashnet.py --huggingface` fetches the resized zip straight into `data/raw/` (add `--full-size` for the 3.6GB original). `--url`, `--kaggle`, and `--manual-dir` are also supported for alternate mirrors.
 - Licence: CC BY 2.0 — attribute the original authors when redistributing.
+- If disk space is tight, point `data/raw`, `data/train`, `data/validation`, `data/test`, and `data/processed` at a directory junction/symlink on a drive with more room — the code just follows whatever those paths resolve to.
 
 ### Synthetic fallback (for offline development / CI)
 
@@ -393,18 +394,25 @@ Macro F1 is the primary model-selection metric because it weighs every class equ
 
 ## Model Results
 
+Trained and evaluated on the real TrashNet dataset (2,527 images after dedup, 70/15/15 split: 1766/379/379 — see [Dataset](#dataset)), 15 epochs (baseline) / 8+5 epochs head+fine-tune (MobileNetV2), CPU only.
+
 | Metric | Baseline CNN | MobileNetV2 |
 |---|---:|---:|
-| Test accuracy | Pending | Pending |
-| Macro precision | Pending | Pending |
-| Macro recall | Pending | Pending |
-| Macro F1-score | Pending | Pending |
-| Weighted F1-score | Pending | Pending |
-| ROC-AUC | Pending | Pending |
-| Average latency | Pending | Pending |
-| Model size | Pending | Pending |
+| Test accuracy | 0.245 | 0.562 |
+| Macro precision | 0.132 | 0.474 |
+| Macro recall | 0.178 | 0.495 |
+| Macro F1-score | **0.093** | **0.480** |
+| Weighted F1-score | 0.124 | 0.544 |
+| ROC-AUC (OvR macro) | 0.565 | 0.819 |
+| PR-AUC (macro) | 0.222 | 0.514 |
+| Log loss | 1.721 | 1.265 |
+| Average latency | 80.1 ms | 87.9 ms |
+| P95 latency | 85.3 ms | 93.2 ms |
+| Model size | 1.3 MB | 20.7 MB |
 
-**Selected model:** Pending — fill in after running the notebook on the real dataset. Do not invent numbers; run `notebook/rurangasort_training.ipynb` end-to-end and paste the actual output here.
+**Selected model: MobileNetV2 (v1, currently active).** The baseline CNN, trained from scratch on ~1,766 real images, collapsed to almost always predicting the majority class (`paper`, ~24% support and precisely the model's overall accuracy) — 0 recall on cardboard/metal/trash, an accuracy number that looks passable in isolation but a macro F1 of 0.093 that exposes the collapse immediately, which is exactly why macro F1 (not accuracy) drives model selection here. MobileNetV2's ImageNet-pretrained features generalize far better from this small a dataset: macro F1 0.480, real recall on 5 of 6 classes (cardboard 0.77, glass 0.58, metal 0.56, paper 0.72, plastic 0.60), at the cost of ~16x model size and marginally higher latency (both still well under the 500ms promotion threshold). Its weak point is `trash` (only 21 test images, the smallest class) — see [Known Limitations](#known-limitations).
+
+Full per-class precision/recall/F1 and the confusion matrix are in `models/active/metrics.json` after running the pipeline yourself; regenerate this table anytime with `python scripts/prepare_data.py && python -m src.training --model <name> --epochs ...` for each architecture, or via the notebook.
 
 ---
 
@@ -688,11 +696,12 @@ The API is stateless — uploaded files and model versions must not depend solel
 
 ## Known Limitations
 
-- Small/synthetic dataset unless the real TrashNet download is used
-- Class imbalance across categories
-- Visual similarity between paper and cardboard
+- Real dataset is modest (2,527 images, 137-594 per class) — `trash` has only 21 test images and the active model's recall on it is correspondingly weak (0.095-0.19 across runs); more data for that class specifically would likely help most
+- Class imbalance across categories (see [Model Results](#model-results) and the class-distribution chart)
+- Visual similarity between paper and cardboard, and between glass/metal/plastic (see confusion matrix in `models/active/metrics.json`)
 - Background/lighting bias in source photos
-- CPU-only inference latency in the default Docker image
+- CPU-only inference latency in the default Docker image (~90ms/image for MobileNetV2 on this dev machine)
+- A from-scratch CNN baseline needs real hyperparameter/architecture tuning to be competitive — as trained here it collapses to the majority class; that's why the transfer-learning model was selected, not treated as a tie-breaker
 - Retraining compute cost
 - Limited real production feedback loop until deployed with real traffic
 
