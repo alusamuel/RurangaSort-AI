@@ -1,4 +1,4 @@
-# RurangaSort AI
+# RurangaSort AI 
 
 RurangaSort AI is an end-to-end Machine Learning system that classifies waste images into categories such as cardboard, glass, metal, paper, plastic, and general waste.
 
