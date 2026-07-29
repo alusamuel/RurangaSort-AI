@@ -14,7 +14,16 @@ RUN pip install --no-cache-dir --upgrade pip \
 COPY src ./src
 COPY api ./api
 COPY worker ./worker
+COPY scripts ./scripts
 COPY models ./models
+COPY data/raw ./data/raw
+
+# Regenerate data/train|validation|test + data/processed/manifest.json at
+# *build* time (not runtime) so /dataset-summary and /evaluate work out of
+# the box on a fresh deploy -- Render's free tier has no shell access to run
+# this after the fact, and doing it on every container boot would slow down
+# every cold start for no reason since data/raw/ is static once built in.
+RUN python scripts/prepare_data.py
 
 ENV PYTHONUNBUFFERED=1
 EXPOSE 8000

@@ -7,20 +7,25 @@ __pycache__/
 .coverage
 htmlcov/
 
-# Data & models (large binaries; provide download/generation scripts instead)
-data/raw/**
+# data/raw/ IS committed on purpose (~47MB, real TrashNet resized images) --
+# Dockerfile.api COPYs it in and runs scripts/prepare_data.py at *build* time
+# to regenerate data/train|validation|test + data/processed/manifest.json
+# inside the image, so /dataset-summary and /evaluate work on a fresh deploy
+# without needing shell access on the host (not available on Render's free
+# tier) or a runtime preprocessing step that would slow down every cold start.
+# The derived splits themselves stay untracked -- pure build output, would
+# just triple the repo size for no benefit since the Dockerfile regenerates
+# them deterministically from data/raw/ every build.
 data/processed/**
 data/train/**
 data/validation/**
 data/test/**
 data/uploaded/**
-!data/raw/.gitkeep
 !data/processed/.gitkeep
 !data/train/.gitkeep
 !data/validation/.gitkeep
 !data/test/.gitkeep
 !data/uploaded/.gitkeep
-!data/raw/*/.gitkeep
 
 models/candidate/*
 models/archived/*
