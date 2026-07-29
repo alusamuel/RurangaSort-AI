@@ -22,26 +22,22 @@ data/uploaded/**
 !data/uploaded/.gitkeep
 !data/raw/*/.gitkeep
 
-models/active/*
 models/candidate/*
 models/archived/*
 models/class_names.json
-!models/active/.gitkeep
 !models/candidate/.gitkeep
 !models/archived/.gitkeep
+# models/active/ IS committed on purpose: it's the currently-promoted model
+# (model.h5 + metadata, ~21MB), shipped with the repo so a fresh clone/cloud
+# deploy has a working model out of the box instead of a 503 until someone
+# retrains. models/candidate/ and models/archived/ stay untracked -- those
+# are transient working state, not a deployable artifact.
 
 reports/figures/*
 reports/evaluation/*
 reports/production_evaluation/*
 reports/load_tests/*
 !reports/**/.gitkeep
-
-*.h5
-*.keras
-*.tf
-*.pkl
-*.pt
-*.pth
 
 .ipynb_checkpoints/
 

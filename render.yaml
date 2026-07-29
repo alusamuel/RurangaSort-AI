@@ -1,0 +1,26 @@
+# Render Blueprint — https://render.com/docs/blueprint-spec
+#
+# Lets Render provision the FastAPI backend automatically: on render.com,
+# "New +" -> "Blueprint" -> connect this repo, and Render reads this file
+# instead of needing every field filled in by hand.
+#
+# Redis/Celery (background retraining) are intentionally NOT included here --
+# Render's free tier doesn't include free Redis, so this deploys the
+# prediction/monitoring/evaluation API only. /retrain and /training-status
+# will correctly respond 503 ("Task queue backend unavailable") rather than
+# crash; every other endpoint (predict, health, model-info, metrics,
+# dataset-summary, evaluate) works fully without Redis (see src/monitoring.py's
+# in-memory fallback).
+services:
+  - type: web
+    name: rurangasort-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile.api
+    dockerContext: .
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: API_KEY
+        generateValue: true

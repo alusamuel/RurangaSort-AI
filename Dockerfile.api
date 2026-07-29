@@ -19,4 +19,7 @@ COPY models ./models
 ENV PYTHONUNBUFFERED=1
 EXPOSE 8000
 
-CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Shell form (not exec-form JSON) so ${PORT} is expanded -- PaaS hosts like
+# Render assign a dynamic port via $PORT and require the process to listen on
+# it; docker-compose/local runs won't set it, so it falls back to 8000.
+CMD uvicorn api.main:app --host 0.0.0.0 --port ${PORT:-8000}

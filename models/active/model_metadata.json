@@ -1,0 +1,23 @@
+{
+  "model_name": "mobilenet_v2",
+  "framework": "TensorFlow",
+  "input_shape": [
+    224,
+    224,
+    3
+  ],
+  "classes": [
+    "cardboard",
+    "glass",
+    "metal",
+    "paper",
+    "plastic",
+    "trash"
+  ],
+  "created_at": "2026-07-29T13:14:49.596750+00:00",
+  "macro_f1": 0.45112650135495325,
+  "status": "active",
+  "model_file": "model.h5",
+  "model_version": "v1",
+  "promoted_at": "2026-07-29T13:14:49.746187+00:00"
+}
