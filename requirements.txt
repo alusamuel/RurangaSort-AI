@@ -5,8 +5,18 @@ scikit-learn>=1.4
 scikit-image>=0.22
 matplotlib>=3.8
 seaborn>=0.13
-tensorflow>=2.16,<2.17; platform_system != "Windows"
-tensorflow-cpu>=2.16,<2.17; platform_system == "Windows"
+# Exact-pinned, not a range: keras 3.x is versioned independently from
+# tensorflow (a separate top-level package tensorflow depends on), so a range
+# like ">=2.16,<2.17" still lets pip resolve a *different* keras minor/patch
+# per install -- which is exactly what happened between this Windows dev
+# machine and Render's Linux container, and Keras 3's initializer config
+# format changed between those resolved versions (GlorotUniform gained
+# input_axes/output_axes), breaking cross-environment model reload with a
+# `.h5` saved by one and loaded by the other. Pinning both packages exactly
+# keeps every environment bit-for-bit identical.
+tensorflow==2.16.2; platform_system != "Windows"
+tensorflow-cpu==2.16.2; platform_system == "Windows"
+keras==3.15.0
 
 fastapi>=0.111
 uvicorn[standard]>=0.30
